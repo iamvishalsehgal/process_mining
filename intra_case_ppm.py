@@ -28,7 +28,7 @@ def extract_intra_case_features(log, window_size=3):
                 'Activity': activity,
                 'Last Qty Completed': last_qty_completed,
                 'Last Qty Rejected': last_qty_rejected,
-                'Completion Time (minutes)': case_events['Completion Time (minutes)'].iloc[i]  # target variable. Should this be included?
+                'Completion Time (minutes)': case_events['Completion Time (minutes)'].iloc[i]  # target variable
             })
     
     # Convert to DataFrame
