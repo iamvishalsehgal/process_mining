@@ -1,8 +1,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
 import numpy as np
+import xgboost as xgb
+from sklearn.impute import SimpleImputer
 
 # Load the feature files
 intra_case_features_df = pd.read_csv('Dataset/Intra_Case_Features.csv')
@@ -10,16 +12,36 @@ kde_features_df = pd.read_csv('Dataset/KDE_Features.csv')
 dde_features_df = pd.read_csv('Dataset/DDE_Features.csv')
 hybrid_features_df = pd.read_csv('Dataset/Hybrid_Features.csv')  # Load the precomputed hybrid features
 
-# Function to train model and calculate RMSE
-def train_and_evaluate(features_df, feature_columns, target_column='Completion Time (minutes)', model_name='Model'):
+# Function to handle missing values
+def preprocess_data(features_df, feature_columns, target_column):
     X = features_df[feature_columns]
     y = features_df[target_column]
+    
+    # Handle missing values using SimpleImputer
+    imputer = SimpleImputer(strategy='mean')
+    X = imputer.fit_transform(X)
+    y = np.array(y)  # Ensure y is a numpy array
+    
+    return X, y
+
+# Function to train model and calculate RMSE
+def train_and_evaluate(features_df, feature_columns, target_column='Completion Time (minutes)', model_name='Model', model_type='random_forest'):
+    X, y = preprocess_data(features_df, feature_columns, target_column)
     
     # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Train a Random Forest model
-    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # Choose model type
+    if model_type == 'random_forest':
+        model = RandomForestRegressor(n_estimators=100, random_state=42)
+    elif model_type == 'gradient_boosting':
+        model = GradientBoostingRegressor(random_state=42)
+    elif model_type == 'xgboost':
+        model = xgb.XGBRegressor(objective='reg:squarederror', random_state=42)
+    else:
+        raise ValueError("Invalid model type. Choose from 'random_forest', 'gradient_boosting', or 'xgboost'.")
+    
+    # Train the model
     model.fit(X_train, y_train)
     
     # Predict on the test set
@@ -27,74 +49,63 @@ def train_and_evaluate(features_df, feature_columns, target_column='Completion T
     
     # Calculate RMSE for evaluation
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    print(f'Root Mean Squared Error (RMSE) for {model_name}: {rmse:.2f}')
+    print(f'Root Mean Squared Error (RMSE) for {model_name} ({model_type.replace("_", " ").title()}): {rmse:.2f}')
     
     return rmse, y_pred, y_test
 
-# Evaluate Intra-Case Model
-intra_rmse, intra_y_pred, intra_y_test = train_and_evaluate(
-    intra_case_features_df, 
-    feature_columns=['Last Qty Completed', 'Last Qty Rejected'],
-    model_name='Intra-Case Model'
-)
-
-# Evaluate KDE Model
-kde_rmse, kde_y_pred, kde_y_test = train_and_evaluate(
-    kde_features_df, 
-    feature_columns=['Similar Case Count', 'Avg Qty Completed by Similar', 'Avg Qty Rejected by Similar'],
-    model_name='KDE Model'
-)
-
-# Evaluate DDE Model
-dde_rmse, dde_y_pred, dde_y_test = train_and_evaluate(
-    dde_features_df, 
-    feature_columns=['Concurrent Case Count', 'Avg Qty Completed by Others', 'Avg Qty Rejected by Others'],
-    model_name='DDE Model'
-)
-
-# Define the hybrid feature columns as used in Hybrid_Features.csv
+# Feature sets for each model
+intra_case_features = ['Last Qty Completed', 'Last Qty Rejected']
+kde_features = ['Similar Case Count', 'Avg Qty Completed by Similar', 'Avg Qty Rejected by Similar']
+dde_features = ['Concurrent Case Count', 'Avg Qty Completed by Others', 'Avg Qty Rejected by Others']
 hybrid_feature_columns = [
-    # Intra-Case Features
     'Last Qty Completed', 'Last Qty Rejected',
-    
-    # KDE Features
     'Similar Case Count', 'Avg Qty Completed by Similar', 'Avg Qty Rejected by Similar',
     'Avg Duration of Concurrent Cases', 'Active Resources Count', 'Total Qty Completed by Similar',
-    
-    # DDE Features
     'Concurrent Case Count', 'Avg Qty Completed by Others', 'Avg Qty Rejected by Others',
     'Avg Duration of Concurrent Cases_DDE', 'Active Resources Count_DDE', 'Total Qty Completed by Others'
 ]
 
-# Evaluate Hybrid Model
-hybrid_rmse, hybrid_y_pred, hybrid_y_test = train_and_evaluate(
-    hybrid_features_df, 
-    feature_columns=hybrid_feature_columns,
-    model_name='Hybrid Model'
-)
+# Evaluate Models
+intra_rmse, intra_y_pred, intra_y_test = train_and_evaluate(intra_case_features_df, intra_case_features, model_name='Intra-Case Model')
 
-# Feature Importance Analysis for Hybrid Model
-hybrid_model = RandomForestRegressor(n_estimators=100, random_state=42)
-hybrid_model.fit(hybrid_features_df[hybrid_feature_columns], hybrid_features_df['Completion Time (minutes)'])
+kde_rmse, kde_y_pred, kde_y_test = train_and_evaluate(kde_features_df, kde_features, model_name='KDE Model')
 
-importances = hybrid_model.feature_importances_
+dde_rmse, dde_y_pred, dde_y_test = train_and_evaluate(dde_features_df, dde_features, model_name='DDE Model')
+
+# Hybrid Model (Random Forest)
+hybrid_rmse_rf, hybrid_y_pred_rf, hybrid_y_test_rf = train_and_evaluate(hybrid_features_df, hybrid_feature_columns, model_name='Hybrid Model', model_type='random_forest')
+
+# Hybrid Model (Gradient Boosting)
+hybrid_rmse_gb, hybrid_y_pred_gb, hybrid_y_test_gb = train_and_evaluate(hybrid_features_df, hybrid_feature_columns, model_name='Hybrid Model', model_type='gradient_boosting')
+
+# Hybrid Model (XGBoost)
+hybrid_rmse_xgb, hybrid_y_pred_xgb, hybrid_y_test_xgb = train_and_evaluate(hybrid_features_df, hybrid_feature_columns, model_name='Hybrid Model', model_type='xgboost')
+
+# Feature Importance Analysis for Hybrid Model (Random Forest)
+hybrid_model_rf = RandomForestRegressor(n_estimators=100, random_state=42)
+X_hybrid, y_hybrid = preprocess_data(hybrid_features_df, hybrid_feature_columns, 'Completion Time (minutes)')
+hybrid_model_rf.fit(X_hybrid, y_hybrid)
+
+importances = hybrid_model_rf.feature_importances_
 feature_importances = pd.DataFrame({
     'Feature': hybrid_feature_columns,
     'Importance': importances
 }).sort_values(by='Importance', ascending=False)
 
-print("\nFeature Importance (Hybrid Model):")
+print("\nFeature Importance (Hybrid Model - Random Forest):")
 print(feature_importances)
 
 # Save feature importances to a CSV file
 feature_importances.to_csv('Dataset/Hybrid_Feature_Importances.csv', index=False)
 print("Feature Importances saved to 'Dataset/Hybrid_Feature_Importances.csv'.")
 
-
-# Summarize results
+# Summarize Results
 results_summary = pd.DataFrame({
-    'Model': ['Intra-Case', 'KDE', 'DDE', 'Hybrid'],
-    'RMSE': [intra_rmse, kde_rmse, dde_rmse, hybrid_rmse]
+    'Model': [
+        'Intra-Case', 'KDE', 'DDE', 
+        'Hybrid (Random Forest)', 'Hybrid (Gradient Boosting)', 'Hybrid (XGBoost)'
+    ],
+    'RMSE': [intra_rmse, kde_rmse, dde_rmse, hybrid_rmse_rf, hybrid_rmse_gb, hybrid_rmse_xgb]
 })
 
 print("\nSummary of Model Evaluation Results:")
@@ -103,48 +114,9 @@ print(results_summary)
 # Save the results summary to a CSV file
 results_summary.to_csv('Dataset/Model_Evaluation_Results.csv', index=False)
 
-# Save detailed predictions vs actuals for each model
-intra_results = pd.DataFrame({'Predicted': intra_y_pred, 'Actual': intra_y_test.values})
-kde_results = pd.DataFrame({'Predicted': kde_y_pred, 'Actual': kde_y_test.values})
-dde_results = pd.DataFrame({'Predicted': dde_y_pred, 'Actual': dde_y_test.values})
-hybrid_results = pd.DataFrame({'Predicted': hybrid_y_pred, 'Actual': hybrid_y_test.values})
-
-intra_results.to_csv('Dataset/Intra_Case_Predictions.csv', index=False)
-kde_results.to_csv('Dataset/KDE_Predictions.csv', index=False)
-dde_results.to_csv('Dataset/DDE_Predictions.csv', index=False)
-hybrid_results.to_csv('Dataset/Hybrid_Predictions.csv', index=False)
-
-print("\nDetailed predictions saved to CSV files.")
-
-# Automatically draw conclusions based on the RMSE values
+# Automatically draw conclusions
 best_model_idx = results_summary['RMSE'].idxmin()
 best_model_name = results_summary['Model'][best_model_idx]
 best_model_rmse = results_summary['RMSE'][best_model_idx]
 
-conclusions = []
-
-# Compare each model's RMSE to determine improvements
-if kde_rmse < intra_rmse:
-    conclusions.append(f"KDE Model improves over the Intra-Case Model by reducing RMSE by {(intra_rmse - kde_rmse):.2f}.")
-else:
-    conclusions.append("KDE Model does not improve over the Intra-Case Model.")
-
-if dde_rmse < intra_rmse:
-    conclusions.append(f"DDE Model improves over the Intra-Case Model by reducing RMSE by {(intra_rmse - dde_rmse):.2f}.")
-else:
-    conclusions.append("DDE Model does not improve over the Intra-Case Model.")
-
-if hybrid_rmse < min(intra_rmse, kde_rmse, dde_rmse):
-    conclusions.append(f"Hybrid Model improves over all individual models with an RMSE reduction of {(min(intra_rmse, kde_rmse, dde_rmse) - hybrid_rmse):.2f} compared to the best individual model.")
-else:
-    conclusions.append("Hybrid Model does not outperform all individual models.")
-
-# Conclusion about the best model
-conclusions.append(f"The best performing model is the {best_model_name} with an RMSE of {best_model_rmse:.2f}.")
-
-# Print Summary and Conclusions
-print("\nSummary of Model Evaluation Results:")
-print(results_summary)
-print("\nConclusions:")
-for conclusion in conclusions:
-    print("-", conclusion)
+print(f"\nThe best performing model is '{best_model_name}' with an RMSE of {best_model_rmse:.2f}.")
