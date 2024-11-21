@@ -119,4 +119,27 @@ best_model_idx = results_summary['RMSE'].idxmin()
 best_model_name = results_summary['Model'][best_model_idx]
 best_model_rmse = results_summary['RMSE'][best_model_idx]
 
-print(f"\nThe best performing model is '{best_model_name}' with an RMSE of {best_model_rmse:.2f}.")
+# Generate Conclusions
+conclusions = []
+if kde_rmse < intra_rmse:
+    conclusions.append(f"KDE Model improves over the Intra-Case Model with an RMSE reduction of {(intra_rmse - kde_rmse):.2f}.")
+else:
+    conclusions.append("KDE Model does not improve over the Intra-Case Model.")
+
+if dde_rmse < intra_rmse:
+    conclusions.append(f"DDE Model improves over the Intra-Case Model with an RMSE reduction of {(intra_rmse - dde_rmse):.2f}.")
+else:
+    conclusions.append("DDE Model does not improve over the Intra-Case Model.")
+
+best_other_model_rmse = min(intra_rmse, kde_rmse, dde_rmse)
+if hybrid_rmse_xgb < best_other_model_rmse:
+    conclusions.append(f"Hybrid Model improves over all individual models with an RMSE reduction of {(best_other_model_rmse - hybrid_rmse_xgb):.2f}.")
+else:
+    conclusions.append("Hybrid Model does not outperform all individual models.")
+
+conclusions.append(f"The best performing model is '{best_model_name}' with an RMSE of {best_model_rmse:.2f}.")
+
+# Print Conclusions
+print("\nConclusions:")
+for conclusion in conclusions:
+    print("-", conclusion)
