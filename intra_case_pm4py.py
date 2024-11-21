@@ -6,7 +6,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 import re
-
+from sklearn.metrics import root_mean_squared_error
 def load_data(file_path):
     """
     Load the dataset and date columns in proper datetime format.
@@ -119,9 +119,11 @@ def extract_prefix_features(df, case_id_key, target_key, numerical_vars, categor
         prefix_df = pm4py.ml.get_prefixes_from_log(df, length=length, case_id_key=case_id_key)
 
         # Calculate remaining time dynamically
-        prefix_df['Dynamic Remaining Time'] = prefix_df.groupby(case_id_key).apply(
+        prefix_df['Dynamic Remaining Time'] = prefix_df.groupby(case_id_key, group_keys= False).apply(
             lambda group: group['case:Total Duration'] - group['Event Completion Time (minutes)'].cumsum().shift(fill_value=0)
         ).reset_index(level=0, drop=True)
+
+        # prefix_df['Dynamic Remaining Time'] = prefix_df.groupby(case_id_key, group_keys=False).apply(...)
 
         # Select relevant columns
         selected_cols = [case_id_key, 'Dynamic Remaining Time', timestamp_var] + numerical_vars + categorical_vars

@@ -1,0 +1,15 @@
+Feature,Importance
+Last Qty Completed,0.3964553928774445
+Avg Duration of Concurrent Cases,0.2451935117329839
+Avg Qty Completed by Similar,0.14926495294447237
+Total Qty Completed by Similar,0.06228513240076181
+Last Qty Rejected,0.053388505867401306
+Avg Duration of Concurrent Cases_DDE,0.029779480170673157
+Similar Case Count,0.023815334196393666
+Total Qty Completed by Others,0.012135770318801122
+Avg Qty Completed by Others,0.010722706418650125
+Avg Qty Rejected by Similar,0.007736320267626927
+Concurrent Case Count,0.0033961987697781527
+Avg Qty Rejected by Others,0.00305596828028685
+Active Resources Count_DDE,0.002770725754726035
+Active Resources Count,0.0

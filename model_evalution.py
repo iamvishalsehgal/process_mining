@@ -73,6 +73,24 @@ hybrid_rmse, hybrid_y_pred, hybrid_y_test = train_and_evaluate(
     model_name='Hybrid Model'
 )
 
+# Feature Importance Analysis for Hybrid Model
+hybrid_model = RandomForestRegressor(n_estimators=100, random_state=42)
+hybrid_model.fit(hybrid_features_df[hybrid_feature_columns], hybrid_features_df['Completion Time (minutes)'])
+
+importances = hybrid_model.feature_importances_
+feature_importances = pd.DataFrame({
+    'Feature': hybrid_feature_columns,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+print("\nFeature Importance (Hybrid Model):")
+print(feature_importances)
+
+# Save feature importances to a CSV file
+feature_importances.to_csv('Dataset/Hybrid_Feature_Importances.csv', index=False)
+print("Feature Importances saved to 'Dataset/Hybrid_Feature_Importances.csv'.")
+
+
 # Summarize results
 results_summary = pd.DataFrame({
     'Model': ['Intra-Case', 'KDE', 'DDE', 'Hybrid'],
