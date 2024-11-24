@@ -1,7 +1,7 @@
 # Process Mining Project (Group 9)
 
 This repository contains the assignment of **Predictive Process Monitoring (PPM)**, made by group 9. The project uses process mining techniques to predict based on a production event log dataset.
-
+The repository currently contains 1 brief exploratory data analysis, to explore the data. Furthermore, two notebooks are included. They are similar, however in the updated version a bug is fixed.
 ## Table of Contents
 
 - [Overview](#overview)
