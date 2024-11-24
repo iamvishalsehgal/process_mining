@@ -16,7 +16,7 @@ The repository currently contains 1 brief exploratory data analysis, to explore 
 The notebook performs the following tasks:
 - Preprocessing the event log data to prepare it for analysis.
 - Transforming the dataset into a format compatible with PM4Py.
-- Extracting useful features such as prefixes and time-based metrics.
+- Extracting prefixes, useful intra and inter prefix/case features and time-based metrics.
 - Implementing predictive process monitoring to forecast completion times and potential bottlenecks.
 
 ## Dataset
@@ -34,7 +34,7 @@ The dataset contains information about production processes.
 
 To run the notebook, ensure you have the following dependencies installed. You can install them using `pip`:
 
-pip install pandas pm4py scikit-learn matplotlib numpy tqdm python-Levenshtein joblib
+pip install pandas pm4py scikit-learn matplotlib numpy tqdm Levenshtein joblib
 
 ## Usage
 Run the notebook inside an environment where all dependencies are installed. Then run all cells at once,
