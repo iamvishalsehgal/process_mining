@@ -33,6 +33,7 @@ The dataset contains information about production processes.
 ## Installation
 
 To run the notebook, ensure you have the following dependencies installed. You can install them using `pip`:
+
 pip install pandas pm4py scikit-learn matplotlib numpy tqdm python-Levenshtein joblib
 
 ## Usage
